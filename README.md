@@ -20,6 +20,7 @@ code.
 ## Journal
 
 * [Saturday, March 17, 2018](2018-03-17.md) - basic horizontal setup and testing
+* [Sunday, April 8, 2018](2018-04-08.md) - brainstorming a collaborative pong game
 
 [dynamicland]: https://dynamicland.org/
 [paper programs]: https://paperprograms.org/
