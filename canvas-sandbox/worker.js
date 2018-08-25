@@ -1,7 +1,5 @@
 importScripts("draw.js"); // <-- our drawing helper
 
-console.log("e2d", e2d);
-
 onmessage = function(evt) {
   const canvas = evt.data.canvas;
 
