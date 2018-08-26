@@ -135,6 +135,8 @@ class Stretcher {
       line,
     };
 
+    this.steps = [];
+
     Object.entries(this.actions)
       .forEach(this.wrapAction.bind(this));
 
@@ -161,7 +163,9 @@ class Stretcher {
     this[actionName] = (...options) => {
       let actionOptions = this.extendDefaults(...options);
       this.log(`${actionName} with options `, actionOptions);
+
       action(this.ctx, actionOptions);
+
       this.resetCanvas();
       return this;
     }
@@ -182,6 +186,48 @@ class Stretcher {
   resetCanvas () {
     this.resetState();
     setCtxAttributes(this.ctx, this.defaults);
+    return this;
+  }
+
+  step (draw) {
+    this.steps.push(draw);
+    return this;
+  }
+
+  clear() {
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    return this;
+  }
+
+  loop () {
+
+    let frame = 0;
+    let start = null;
+
+    let step = (timestamp) => {
+      if (!start) start = timestamp;
+
+      let hasNext = this.steps.reduce((result, draw) => {
+        return draw.call(this, timestamp - start, frame) || result;
+      }, false);
+
+      frame = frame + 1;
+
+      if (hasNext) {
+        this.request = requestAnimationFrame(step);
+      }
+    }
+
+    this.request = requestAnimationFrame(step);
+
+    return this;
+  }
+
+  unloop () {
+
+    cancelAnimationFrame(this.request);
+    this.steps = [];
+
     return this;
   }
 
