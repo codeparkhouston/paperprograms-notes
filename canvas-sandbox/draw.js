@@ -11,10 +11,9 @@ const DEFAULTS = {
   stroke: '',
   textAlign: 'center',
   textBaseline: 'top',
-  logLevel: 3,
 };
 
-const ATTRIBUTES = ['font', 'fillStyle', 'strokeStyle', 'currentTransform','direction','filter','globalAlpha','globalCompositeOperation','imageSmoothingEnabled','imageSmoothingQuality','lineCap','lineDashOffset','lineJoin','lineWidth','miterLimit','shadowBlur','shadowColor','shadowOffsetX','shadowOffsetY','textAlign','textBaseline'];
+const ATTRIBUTES = ['font', 'fillStyle', 'strokeStyle', 'currentTransform','direction','filter','globalAlpha','globalCompositeOperation','imageSmoothingEnabled','imageSmoothingQuality','lineCap','lineDashOffset','lineJoin','miterLimit','shadowBlur','shadowColor','shadowOffsetX','shadowOffsetY','textAlign','textBaseline'];
 
 const TRANSFORMS = {
   font: ({fontSize, fontFace}) => {
@@ -26,13 +25,23 @@ const TRANSFORMS = {
   strokeStyle: ({stroke}) => {
     return stroke;
   },
+  lineWidth: ({strokeWidth}) => {
+    return strokeWidth;
+  },
 };
 
-const transformOrIdentity = (allKeys, transforms, options) => {
+const STATES = Object.keys(DEFAULTS)
+                      .concat(ATTRIBUTES)
+                      .concat(['width', 'height', 'radius'])
+
+const identity = (value) => (value)
+const property = (property, object) => (object[property])
+
+const transformOrProperty = (allKeys, transforms, options) => {
   return allKeys
           .reduce((result, ctxAttr) => {
             const transform = transforms[ctxAttr] ||
-                              ((options) => (options[ctxAttr]));
+                              property.bind(null, ctxAttr);
 
             const newAttr = {
               [ctxAttr]: transform(options),
@@ -47,7 +56,7 @@ const transformOrIdentity = (allKeys, transforms, options) => {
 }
 
 const setCtxAttributes = (ctx, options) => {
-  const newAttributes = transformOrIdentity(ATTRIBUTES, TRANSFORMS, options);
+  const newAttributes = transformOrProperty(ATTRIBUTES, TRANSFORMS, options);
   Object.assign(ctx, newAttributes);
 };
 
@@ -114,14 +123,13 @@ const loop = (ctx, draw) => {
 class Stretcher {
   constructor (ctx, defaults = DEFAULTS) {
     this.ctx = ctx;
-    this.defaults = transformOrIdentity(Object.keys(DEFAULTS), {
+    this.defaults = transformOrProperty(Object.keys(DEFAULTS), {
       x: this.defaultX.bind(this),
       y: this.defaultY.bind(this),
-    }, DEFAULTS);
+    }, defaults);
 
-    this.chainedOptions = {};
     this.actions = {
-      text,
+      write: text,
       rectangle,
       circle,
       line,
@@ -129,6 +137,10 @@ class Stretcher {
 
     Object.entries(this.actions)
       .forEach(this.wrapAction.bind(this));
+
+    STATES.forEach(this.wrapChainableState.bind(this));
+
+    this.resetState();
 
     return this;
   }
@@ -142,7 +154,7 @@ class Stretcher {
   }
 
   extendDefaults (...options) {
-    return Object.assign({}, this.defaults, this.chainedOptions, ...options);
+    return Object.assign({}, this.defaults, this.state, ...options);
   }
 
   wrapAction ([actionName, action]) {
@@ -155,13 +167,27 @@ class Stretcher {
     }
   }
 
+  wrapChainableState (stateName) {
+    this[stateName] = (value) => {
+      this.state[stateName] = identity(value)
+      return this;
+    }
+  }
+
+  resetState () {
+    this.state = {};
+    return this;
+  }
+
   resetCanvas () {
+    this.resetState();
     setCtxAttributes(this.ctx, this.defaults);
-    this.chainedOptions = {};
     return this;
   }
 
   log () {
+    // can use log levels to do different logging stuffs here.
+    // can even use this to build an array of simple objects representing shapes
     console.warn(...arguments);
   }
 }

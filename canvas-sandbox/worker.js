@@ -11,7 +11,9 @@ onmessage = function(evt) {
   
   const cool = new Stretcher(ctx);
 
-  cool.text({ text: 'hello' })
+  cool
     // .rectangle({ x: 20, y: 30, width: 200, height: 100 })
+    .x(20).y(30).width(200).height(100).rectangle()
+    .color('red').text('hello').write()
     .circle({ x: 200, y: 30, radius: 10, color: 'blue' })
 };
